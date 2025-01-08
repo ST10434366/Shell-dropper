@@ -50,11 +50,14 @@ int main(int argc, char const *argv[])
 	"\xd5\x63\x61\x6c\x63\x2e\x65\x78\x65\x00"
 	;
 
-    for (int i = 0; i < sizeof(shellcode); i++)
+	char processName[] = "kernel32.dll";
+
+    for (int i = 0; i < sizeof(processName); i++)
     {
-        x = shellcode[i]^key;
-        printf("\\x%02x", shellcode[i]^key);
+        x = processName[i]^key;
+        printf("\\x%02x", processName[i]^key);
     }
+	getchar();
 
     return 0;
 }

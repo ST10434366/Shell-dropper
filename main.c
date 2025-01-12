@@ -98,7 +98,7 @@ BOOL CheckRegisteryKey()
 	{
 		if (RegQueryValueExW(regHandle, (LPCWSTR)"VMware SCSI Controller", NULL, NULL, NULL, NULL))
 		{
-			exit(1);
+			
 			return TRUE;
 		}
 	}

